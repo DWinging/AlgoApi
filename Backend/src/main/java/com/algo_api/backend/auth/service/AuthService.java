@@ -7,6 +7,7 @@ import com.algo_api.backend.auth.entity.User;
 import com.algo_api.backend.auth.repository.UserRepository;
 import com.algo_api.backend.global.exception.DuplicateEmailException;
 import com.algo_api.backend.global.exception.LoginFailedException;
+import com.algo_api.backend.global.security.JwtProvider;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,6 +19,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
     public void signup(@Valid SignupRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
@@ -47,6 +49,11 @@ public class AuthService {
             throw new LoginFailedException();
         }
 
-        return new LoginResponse(user.getId());
+        String accessToken = jwtProvider.createToken(user.getId());
+
+        return new LoginResponse(
+                user.getId(),
+                accessToken
+        );
     }
 }
