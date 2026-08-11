@@ -8,5 +8,5 @@ import lombok.Getter;
 public class LoginResponse {
 
     private Long userID;
-
+    private String accessToken;
 }
