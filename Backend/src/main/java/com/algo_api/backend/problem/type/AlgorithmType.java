@@ -9,6 +9,7 @@ public enum AlgorithmType {
 
     IMPLEMENTATION("구현"),
     SIMULATION("시뮬레이션"),
+    SORTING("정렬"),
 
     GREEDY("그리디"),
     DYNAMIC_PROGRAMMING("동적 계획법"),
