@@ -4,13 +4,17 @@ import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.entity.User;
 import com.algo_api.backend.auth.repository.ApiKeyRepository;
 import com.algo_api.backend.auth.repository.UserRepository;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+
 import java.util.HexFormat;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -48,28 +52,34 @@ public class ApiKeyService {
     }
 
     private String createApiKey(User user) {
-        String key = generateUniqueKey();
+        String rawKey = generateUniqueKey();
+        String hashedKey = hash(rawKey);
 
         ApiKey apiKey = ApiKey.builder()
-                .apiKey(key)
+                .apiKey(hashedKey)
                 .user(user)
                 .build();
 
         apiKeyRepository.save(apiKey);
 
-        return key;
+        return rawKey;
+    }
+
+    private String hash(String key) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashedBytes = digest.digest(key.getBytes(StandardCharsets.UTF_8));
+
+            return HexFormat.of().formatHex(hashedBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("API Key 해시 생성에 실패했습니다.");
+        }
     }
 
     private String generateUniqueKey() {
-        String key;
+        byte[] bytes = new byte[16];
+        secureRandom.nextBytes(bytes);
 
-        do {
-            byte[] bytes = new byte[32];
-            secureRandom.nextBytes(bytes);
-
-            key = HexFormat.of().formatHex(bytes);
-        } while (apiKeyRepository.existsByApiKey(key));
-
-        return key;
+        return HexFormat.of().formatHex(bytes);
     }
 }
