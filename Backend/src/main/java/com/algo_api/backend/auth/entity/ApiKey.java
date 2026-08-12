@@ -1,5 +1,6 @@
 package com.algo_api.backend.auth.entity;
 
+import com.algo_api.backend.auth.type.ApiKeyRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -18,7 +19,7 @@ public class ApiKey {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String apiKey;
+    private String apiKeyHash;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -31,13 +32,15 @@ public class ApiKey {
     @Column(nullable = false)
     private LocalDateTime issuedAt;
 
-    @Column(nullable = false)
     private LocalDateTime expiresAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private ApiKeyRole role;
+
     @PrePersist
-    public void perPersist() {
+    public void prePersist() {
         this.issuedAt = LocalDateTime.now();
-        this.expiresAt = this.issuedAt.plusDays(180);
     }
 
     public void deactivate() {

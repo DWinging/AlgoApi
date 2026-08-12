@@ -12,20 +12,32 @@ public class OpenApiConfig {
 
     @Bean
     public OpenAPI openAPI() {
-        String schemeName = "bearerAuth";
+
+        String bearerScheme = "bearerAuth";
+        String apiKeyScheme = "apiKeyAuth";
 
         return new OpenAPI()
                 .components(new Components()
                         .addSecuritySchemes(
-                                schemeName,
+                                bearerScheme,
                                 new SecurityScheme()
                                         .type(SecurityScheme.Type.HTTP)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
                         )
+                        .addSecuritySchemes(
+                                apiKeyScheme,
+                                new SecurityScheme()
+                                        .type(SecurityScheme.Type.APIKEY)
+                                        .in(SecurityScheme.In.HEADER)
+                                        .name("X-API-Key")
+                        )
                 )
                 .addSecurityItem(
-                        new SecurityRequirement().addList(schemeName)
+                        new SecurityRequirement().addList(bearerScheme)
+                )
+                .addSecurityItem(
+                        new SecurityRequirement().addList(apiKeyScheme)
                 );
     }
 }

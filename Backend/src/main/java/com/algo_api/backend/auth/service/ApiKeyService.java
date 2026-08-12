@@ -5,15 +5,19 @@ import com.algo_api.backend.auth.entity.User;
 import com.algo_api.backend.auth.repository.ApiKeyRepository;
 import com.algo_api.backend.auth.repository.UserRepository;
 
+import com.algo_api.backend.auth.type.ApiKeyRole;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.lang.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 
+import java.time.LocalDateTime;
 import java.util.HexFormat;
 
 @Service
@@ -25,12 +29,38 @@ public class ApiKeyService {
 
     private final SecureRandom secureRandom = new SecureRandom();
 
+    @Value("${api-key.expiration-days}")
+    private long expirationDays;
+
+    @Transactional
+    public ApiKey authenticate(String rawApiKey) {
+        String apiKeyHash = hash(rawApiKey);
+
+        ApiKey apiKey = apiKeyRepository.findByApiKeyHash(apiKeyHash)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("유효하지 않은 API Key입니다.")
+                );
+
+        if (!apiKey.isActive()) {
+            throw new IllegalStateException("비활성화된 API Key입니다.");
+        }
+
+        if (apiKey.getExpiresAt() != null
+                && apiKey.getExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new IllegalStateException("만료된 API Key입니다.");
+        }
+
+        return apiKey;
+    }
+
     @Transactional
     public String issue(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow();
 
-        if (apiKeyRepository.findByUser_IdAndActiveTrue(userId).isPresent()) {
+        if (apiKeyRepository
+                .findByUser_IdAndActiveTrueAndRole(userId, ApiKeyRole.USER)
+                .isPresent()) {
             throw new IllegalStateException("이미 활성 API Key가 존재합니다.");
         }
 
@@ -43,7 +73,7 @@ public class ApiKeyService {
                 .orElseThrow();
 
         ApiKey currentKey = apiKeyRepository
-                .findByUser_IdAndActiveTrue(userId)
+                .findByUser_IdAndActiveTrueAndRole(userId, ApiKeyRole.USER)
                 .orElseThrow();
 
         currentKey.deactivate();
@@ -56,8 +86,11 @@ public class ApiKeyService {
         String hashedKey = hash(rawKey);
 
         ApiKey apiKey = ApiKey.builder()
-                .apiKey(hashedKey)
+                .apiKeyHash(hashedKey)
                 .user(user)
+                .role(ApiKeyRole.USER)
+                .active(true)
+                .expiresAt(LocalDateTime.now().plusDays(expirationDays))
                 .build();
 
         apiKeyRepository.save(apiKey);
