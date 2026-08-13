@@ -13,4 +13,6 @@ public interface ApiKeyRepository extends JpaRepository<ApiKey, Long> {
     Optional<ApiKey> findByUser_IdAndActiveTrueAndRole(Long userId, ApiKeyRole role);
 
     Optional<ApiKey> findByApiKeyHash(String apiKeyHash);
+
+    Optional<ApiKey> findFirstByUser_IdOrderByIssuedAtDescIdDesc(Long userId);
 }

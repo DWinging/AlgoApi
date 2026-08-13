@@ -1,5 +1,6 @@
 package com.algo_api.backend.auth.service;
 
+import com.algo_api.backend.auth.dto.ApiKeyStatusResponse;
 import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.entity.User;
 import com.algo_api.backend.auth.repository.ApiKeyRepository;
@@ -114,5 +115,22 @@ public class ApiKeyService {
         secureRandom.nextBytes(bytes);
 
         return HexFormat.of().formatHex(bytes);
+    }
+
+    @Transactional
+    public ApiKeyStatusResponse getStatus(Long userId) {
+        return apiKeyRepository.findFirstByUser_IdOrderByIssuedAtDescIdDesc(userId)
+                .map(apiKey -> new ApiKeyStatusResponse(
+                        true,
+                        apiKey.isActive(),
+                        apiKey.getIssuedAt(),
+                        apiKey.getExpiresAt()
+                ))
+                .orElseGet(() -> new ApiKeyStatusResponse(
+                        false,
+                        false,
+                        null,
+                        null
+                ));
     }
 }
