@@ -4,55 +4,91 @@ type CurrentApiKeySectionProps = {
   apiKey: ApiKeyInfo | null;
   onGenerate: () => void;
   onRegenerate: () => void;
+  isLoading: boolean;
+  isInitialLoading: boolean;
 };
 
 const primaryButtonClass =
   "h-11 cursor-pointer rounded-md border border-primary bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:border-primary-hover hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+const compactPrimaryButtonClass =
+  "inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-border bg-surface px-3 text-xs font-semibold text-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
+const metadataItemClass = "grid min-w-0 grid-rows-[1rem_2.25rem] gap-2";
+const metadataValueClass = "flex h-9 min-w-0 items-center text-sm font-medium text-foreground";
 
-function CurrentApiKeySection({ apiKey, onGenerate, onRegenerate }: CurrentApiKeySectionProps) {
+function CurrentApiKeySection({
+  apiKey,
+  onGenerate,
+  onRegenerate,
+  isLoading,
+  isInitialLoading,
+}: CurrentApiKeySectionProps) {
   return (
     <section className="mt-10 border-t border-border pt-8" aria-labelledby="current-key-title">
       <h2 id="current-key-title" className="text-xl font-bold tracking-[-0.02em] text-foreground">
         Current API Key
       </h2>
 
-      {!apiKey ? (
+      {isInitialLoading ? (
+        <p className="mt-4 text-sm leading-6 text-muted">API Key 정보를 불러오는 중입니다.</p>
+      ) : !apiKey ? (
         <div className="mt-4">
           <p className="text-sm leading-6 text-muted">아직 발급된 API Key가 없습니다.</p>
-          <button className={`${primaryButtonClass} mt-6`} type="button" onClick={onGenerate}>
-            Generate API Key
+          <button
+            className={`${primaryButtonClass} mt-6 disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/20 disabled:text-muted`}
+            type="button"
+            onClick={onGenerate}
+            disabled={isLoading}
+          >
+            {isLoading ? "Generating..." : "Generate API Key"}
           </button>
         </div>
       ) : (
         <div className="mt-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">API Key</p>
-            <code className="mt-2 block overflow-x-auto whitespace-nowrap font-mono text-sm text-foreground">
-              {apiKey.maskedKey}
-            </code>
-          </div>
-
-          <div className="mt-6 grid gap-6 sm:grid-cols-3">
-            <div>
+          <div className="grid max-w-[620px] grid-cols-4 gap-4">
+            <div className={metadataItemClass}>
               <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Status</p>
-              <p className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                <span className="size-2 rounded-full bg-primary" aria-hidden="true" />
-                Active
+              <p className={`${metadataValueClass} gap-2`}>
+                <span
+                  className={`size-2 rounded-full ${apiKey.status === "active" ? "bg-primary" : "bg-muted"}`}
+                  aria-hidden="true"
+                />
+                {apiKey.status === "active" ? "Active" : "Inactive"}
               </p>
             </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Issued At</p>
-              <p className="mt-2 text-sm font-medium text-foreground">{apiKey.issuedAt}</p>
-            </div>
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">Expires At</p>
-              <p className="mt-2 text-sm font-medium text-foreground">{apiKey.expiresAt}</p>
-            </div>
+            {apiKey.issuedAt && (
+              <div className={metadataItemClass}>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  Issued At
+                </p>
+                <p className={metadataValueClass}>{apiKey.issuedAt}</p>
+              </div>
+            )}
+            {apiKey.expiresAt && (
+              <div className={metadataItemClass}>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  Expires At
+                </p>
+                <p className={metadataValueClass}>{apiKey.expiresAt}</p>
+              </div>
+            )}
+            {apiKey.status === "active" && (
+              <div className={metadataItemClass}>
+                <p className="text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+                  Action
+                </p>
+                <div className={metadataValueClass}>
+                  <button
+                    className={`${compactPrimaryButtonClass} disabled:cursor-not-allowed disabled:bg-muted/20 disabled:text-muted`}
+                    type="button"
+                    onClick={onRegenerate}
+                    disabled={isLoading}
+                  >
+                    Regenerate
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-
-          <button className={`${primaryButtonClass} mt-8`} type="button" onClick={onRegenerate}>
-            Regenerate API Key
-          </button>
         </div>
       )}
     </section>

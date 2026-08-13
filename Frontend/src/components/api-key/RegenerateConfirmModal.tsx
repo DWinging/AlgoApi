@@ -3,9 +3,14 @@ import Modal from "./Modal";
 type RegenerateConfirmModalProps = {
   onCancel: () => void;
   onConfirm: () => void;
+  isSubmitting: boolean;
 };
 
-function RegenerateConfirmModal({ onCancel, onConfirm }: RegenerateConfirmModalProps) {
+function RegenerateConfirmModal({
+  onCancel,
+  onConfirm,
+  isSubmitting,
+}: RegenerateConfirmModalProps) {
   return (
     <Modal title="API Key 재발급" onClose={onCancel}>
       <p className="mt-3 text-sm leading-6 text-muted">
@@ -16,15 +21,17 @@ function RegenerateConfirmModal({ onCancel, onConfirm }: RegenerateConfirmModalP
           className="h-10 cursor-pointer rounded-md border border-border bg-background px-4 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           type="button"
           onClick={onCancel}
+          disabled={isSubmitting}
         >
           Cancel
         </button>
         <button
-          className="h-10 cursor-pointer rounded-md border border-primary bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:border-primary-hover hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="h-10 cursor-pointer rounded-md border border-primary bg-primary px-4 text-sm font-semibold text-on-primary transition-colors hover:border-primary-hover hover:bg-primary-hover disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/20 disabled:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           type="button"
           onClick={onConfirm}
+          disabled={isSubmitting}
         >
-          Regenerate
+          {isSubmitting ? "Regenerating..." : "Regenerate"}
         </button>
       </div>
     </Modal>
