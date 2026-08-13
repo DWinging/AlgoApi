@@ -1,18 +1,19 @@
 const curlExample = `curl -X GET \\
   -H "X-API-Key: your-api-key" \\
-  https://your-domain.com/api/v1/problems/daily`;
+  http://localhost:8080/api/v1/problems/recommend`;
 
 const responseExample = `{
   "id": 12,
-  "platform": "LeetCode",
-  "number": 2708,
-  "title": "Maximum Strength of a Group",
-  "level": "Medium",
-  "url": "https://leetcode.com/problems/maximum-strength-of-a-group",
+  "platform": "프로그래머스",
+  "number": 92343,
+  "title": "양과 늑대",
+  "level": "Lv3",
+  "url": "https://school.programmers.co.kr/learn/courses/30/lessons/92343",
   "algorithms": [
-    "Greedy"
+    "DFS",
+    "비트마스킹"
   ],
-  "createdAt": "2026-08-13T08:00:00"
+  "createdAt": "2026-07-18T08:00:00"
 }`;
 
 const codeBlockClass =
@@ -25,7 +26,7 @@ function ApiUsageSection() {
         API Usage
       </h2>
       <p className="mt-2 text-sm leading-6 text-muted">
-        API Key를 요청 Header에 포함하여 일일 추천 문제를 조회할 수 있습니다.
+        API Key를 요청 Header에 포함하여 오늘의 문제를 조회할 수 있습니다.
       </p>
 
       <div className="mt-8 space-y-8">
@@ -35,7 +36,7 @@ function ApiUsageSection() {
           </h3>
           <div className="mt-3 flex items-center gap-3 overflow-x-auto rounded-md border border-border bg-surface px-4 py-3 font-mono text-sm whitespace-nowrap">
             <span className="font-bold text-primary">GET</span>
-            <code className="text-foreground">/api/v1/problems/daily</code>
+            <code className="text-foreground">/api/v1/problems/recommend</code>
           </div>
         </section>
 

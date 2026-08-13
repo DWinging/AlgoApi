@@ -1,6 +1,5 @@
 export type ApiKeyInfo = {
-  maskedKey: string;
-  status: "active";
-  issuedAt: string;
-  expiresAt: string;
+  status: "active" | "inactive";
+  issuedAt?: string;
+  expiresAt?: string;
 };
