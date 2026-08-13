@@ -2,7 +2,9 @@ package com.algo_api.backend.problem.service;
 
 import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.entity.User;
+import com.algo_api.backend.auth.repository.UserRepository;
 import com.algo_api.backend.problem.dto.ProblemCreateRequest;
+import com.algo_api.backend.problem.dto.ProblemHistoryResponse;
 import com.algo_api.backend.problem.dto.ProblemResponse;
 import com.algo_api.backend.problem.entity.*;
 import com.algo_api.backend.problem.repository.AlgorithmRepository;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -27,6 +30,7 @@ public class ProblemService {
     private final AlgorithmRepository algorithmRepository;
     private final ProblemAlgorithmRepository problemAlgorithmRepository;
     private final DailyAllocatedRepository dailyAllocatedRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public ProblemResponse create(ProblemCreateRequest request) {
@@ -85,8 +89,12 @@ public class ProblemService {
     }
 
     @Transactional
-    public ProblemResponse recommend(ApiKey apiKey) {
-        User user = apiKey.getUser();
+    public ProblemResponse recommend(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new IllegalStateException("사용자를 찾을 수 없습니다.")
+                );
+
         LocalDate today = LocalDate.now();
 
         DailyAllocation allocation = dailyAllocatedRepository
@@ -97,12 +105,6 @@ public class ProblemService {
     }
 
     private ProblemResponse toResponse(Problem problem) {
-        Set<String> algorithms = problem.getAlgorithms().stream()
-                .map(ProblemAlgorithm::getAlgorithm)
-                .map(Algorithm::getName)
-                .map(AlgorithmType::getDisplayName)
-                .collect(Collectors.toSet());
-
         return new ProblemResponse(
                 problem.getId(),
                 problem.getPlatform().getDisplayName(),
@@ -110,7 +112,7 @@ public class ProblemService {
                 problem.getTitle(),
                 problem.getLevel(),
                 problem.getUrl(),
-                algorithms,
+                getAlgorithms(problem),
                 problem.getCreatedAt()
         );
     }
@@ -132,5 +134,37 @@ public class ProblemService {
                 .orElseThrow(() ->
                         new IllegalStateException("추천 가능한 문제가 없습니다.")
                 );
+    }
+
+    @Transactional
+    public List<ProblemHistoryResponse> getHistory(Long userId) {
+        return dailyAllocatedRepository
+                .findAllByUser_IdOrderByAllocatedDateDesc(userId)
+                .stream()
+                .map(this::toHistoryResponse)
+                .toList();
+    }
+
+    private ProblemHistoryResponse toHistoryResponse(DailyAllocation allocation) {
+        Problem problem = allocation.getProblem();
+
+        return new ProblemHistoryResponse(
+                allocation.getAllocatedDate(),
+                problem.getId(),
+                problem.getPlatform().getDisplayName(),
+                problem.getNumber(),
+                problem.getTitle(),
+                problem.getLevel(),
+                problem.getUrl(),
+                getAlgorithms(problem)
+        );
+    }
+
+    private Set<String> getAlgorithms(Problem problem) {
+        return problem.getAlgorithms().stream()
+                .map(ProblemAlgorithm::getAlgorithm)
+                .map(Algorithm::getName)
+                .map(AlgorithmType::getDisplayName)
+                .collect(Collectors.toSet());
     }
 }
