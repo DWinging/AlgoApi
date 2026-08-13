@@ -8,8 +8,8 @@ import java.util.Optional;
 
 public interface DailyAllocatedRepository extends JpaRepository<DailyAllocation, Long> {
 
-    Optional<DailyAllocation> findByApiKey_IdAndAllocatedDate(
-            Long apiKeyId,
+    Optional<DailyAllocation> findByUser_IdAndAllocatedDate(
+            Long userId,
             LocalDate allocatedDate
     );
 }
