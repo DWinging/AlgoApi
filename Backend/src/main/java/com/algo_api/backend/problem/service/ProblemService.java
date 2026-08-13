@@ -1,6 +1,7 @@
 package com.algo_api.backend.problem.service;
 
 import com.algo_api.backend.auth.entity.ApiKey;
+import com.algo_api.backend.auth.entity.User;
 import com.algo_api.backend.problem.dto.ProblemCreateRequest;
 import com.algo_api.backend.problem.dto.ProblemResponse;
 import com.algo_api.backend.problem.entity.*;
@@ -85,11 +86,12 @@ public class ProblemService {
 
     @Transactional
     public ProblemResponse recommend(ApiKey apiKey) {
+        User user = apiKey.getUser();
         LocalDate today = LocalDate.now();
 
         DailyAllocation allocation = dailyAllocatedRepository
-                .findByApiKey_IdAndAllocatedDate(apiKey.getId(), today)
-                .orElseGet(() -> createDailyAllocation(apiKey, today));
+                .findByUser_IdAndAllocatedDate(user.getId(), today)
+                .orElseGet(() -> createDailyAllocation(user, today));
 
         return toResponse(allocation.getProblem());
     }
@@ -113,11 +115,11 @@ public class ProblemService {
         );
     }
 
-    private DailyAllocation createDailyAllocation(ApiKey apiKey, LocalDate today) {
-        Problem problem = getRandomProblem(apiKey);
+    private DailyAllocation createDailyAllocation(User user, LocalDate today) {
+        Problem problem = getRandomProblem(user);
 
         DailyAllocation allocation = DailyAllocation.builder()
-                .apiKey(apiKey)
+                .user(user)
                 .problem(problem)
                 .allocatedDate(today)
                 .build();
@@ -125,8 +127,8 @@ public class ProblemService {
         return dailyAllocatedRepository.save(allocation);
     }
 
-    private Problem getRandomProblem(ApiKey apiKey) {
-        return problemRepository.findRandomUnallocated(apiKey.getId())
+    private Problem getRandomProblem(User user) {
+        return problemRepository.findRandomUnallocated(user.getId())
                 .orElseThrow(() ->
                         new IllegalStateException("추천 가능한 문제가 없습니다.")
                 );

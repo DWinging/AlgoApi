@@ -1,6 +1,7 @@
 package com.algo_api.backend.problem.entity;
 
 import com.algo_api.backend.auth.entity.ApiKey;
+import com.algo_api.backend.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +11,7 @@ import java.time.LocalDate;
 @Table(
         name = "daily_allocation",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"key_id", "allocated_date"})
+                @UniqueConstraint(columnNames = {"user_id", "allocated_date"})
         }
 )
 @Getter
@@ -27,8 +28,8 @@ public class DailyAllocation {
     private LocalDate allocatedDate;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "key_id", nullable = false)
-    private ApiKey apiKey;
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "problem_id", nullable = false)

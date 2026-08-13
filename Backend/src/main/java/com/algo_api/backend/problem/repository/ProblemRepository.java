@@ -17,12 +17,12 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
                     SELECT 1
                     FROM daily_allocation da
                     WHERE da.problem_id = p.id
-                      AND da.key_id = :apiKeyId
+                      AND da.user_id = :userId
                 )
                 ORDER BY RAND()
                 LIMIT 1
                 """,
             nativeQuery = true
     )
-    Optional<Problem> findRandomUnallocated(@Param("apiKeyId") Long apiKeyId);
+    Optional<Problem> findRandomUnallocated(@Param("userId") Long userId);
 }
