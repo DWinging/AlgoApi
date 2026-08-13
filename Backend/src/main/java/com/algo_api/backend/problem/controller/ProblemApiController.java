@@ -30,7 +30,7 @@ public class ProblemApiController {
         ApiKey apiKey = (ApiKey) authentication.getPrincipal();
 
         return ResponseEntity.ok(
-                problemService.recommend(apiKey)
+                problemService.recommend(apiKey.getUser().getId())
         );
     }
 }

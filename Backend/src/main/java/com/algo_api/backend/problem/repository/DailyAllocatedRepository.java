@@ -4,6 +4,7 @@ import com.algo_api.backend.problem.entity.DailyAllocation;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface DailyAllocatedRepository extends JpaRepository<DailyAllocation, Long> {
@@ -11,5 +12,9 @@ public interface DailyAllocatedRepository extends JpaRepository<DailyAllocation,
     Optional<DailyAllocation> findByUser_IdAndAllocatedDate(
             Long userId,
             LocalDate allocatedDate
+    );
+
+    List<DailyAllocation> findAllByUser_IdOrderByAllocatedDateDesc(
+            Long userId
     );
 }
