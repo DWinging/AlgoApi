@@ -3,21 +3,27 @@ import { useNavigate } from "react-router-dom";
 import { login as requestLogin, type LoginRequest } from "../api/authApi";
 import {
   AUTH_SESSION_EXPIRED_EVENT,
-  clearStoredAccessToken,
+  clearStoredAuthSession,
   expireAuthSession,
   getAccessTokenExpiration,
+  getAccessTokenUserId,
+  getStoredUserId,
   getValidStoredAccessToken,
-  storeAccessToken,
+  storeAuthSession,
 } from "./auth-storage";
 import { AuthContext } from "./auth-context";
 
 export function AuthProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate();
   const [accessToken, setAccessToken] = useState<string | null>(getValidStoredAccessToken);
+  const [userId, setUserId] = useState<number | null>(() =>
+    getStoredUserId() ?? (accessToken ? getAccessTokenUserId(accessToken) : null),
+  );
 
   useEffect(() => {
     const handleSessionExpired = () => {
       setAccessToken(null);
+      setUserId(null);
       navigate("/login", { replace: true });
     };
 
@@ -43,19 +49,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const login = useCallback(async (request: LoginRequest) => {
     const response = await requestLogin(request);
-    storeAccessToken(response.accessToken);
+    storeAuthSession(response.accessToken, response.userID);
     setAccessToken(response.accessToken);
+    setUserId(response.userID);
     return response;
   }, []);
 
   const logout = useCallback(() => {
-    clearStoredAccessToken();
+    clearStoredAuthSession();
     setAccessToken(null);
+    setUserId(null);
   }, []);
 
   const value = useMemo(
-    () => ({ accessToken, isAuthenticated: Boolean(accessToken), login, logout }),
-    [accessToken, login, logout],
+    () => ({ accessToken, userId, isAuthenticated: Boolean(accessToken && userId), login, logout }),
+    [accessToken, userId, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

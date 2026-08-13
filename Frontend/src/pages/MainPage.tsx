@@ -24,8 +24,11 @@ const STEPS = [
 
 function MainPage() {
   const { isAuthenticated } = useAuth();
-  // Pass the daily recommendation API fetcher to this hook when it is connected.
-  const { openDailyProblem: openDailyProblemUrl } = useDailyProblem();
+  const {
+    isLoading: isDailyProblemLoading,
+    errorMessage: dailyProblemError,
+    openDailyProblem: openDailyProblemUrl,
+  } = useDailyProblem();
 
   const openDailyProblem = () => {
     void openDailyProblemUrl();
@@ -49,11 +52,12 @@ function MainPage() {
           {isAuthenticated ? (
             <>
               <button
-                className="h-11 cursor-pointer rounded-md border border-primary bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:border-primary-hover hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                className="h-11 cursor-pointer rounded-md border border-primary bg-primary px-5 text-sm font-semibold text-on-primary transition-colors hover:border-primary-hover hover:bg-primary-hover disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/20 disabled:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
                 type="button"
                 onClick={openDailyProblem}
+                disabled={isDailyProblemLoading}
               >
-                오늘의 문제
+                {isDailyProblemLoading ? "불러오는 중..." : "오늘의 문제"}
               </button>
               <Link
                 className="inline-flex h-11 items-center rounded-md border border-border bg-surface px-5 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
@@ -86,6 +90,14 @@ function MainPage() {
             </>
           )}
         </div>
+        {dailyProblemError && isAuthenticated && (
+          <p
+            className="mt-4 rounded-md border border-danger-border bg-danger-surface px-3 py-2.5 text-sm text-danger"
+            role="alert"
+          >
+            {dailyProblemError}
+          </p>
+        )}
       </section>
 
       <section className="mt-12 border-t border-border pt-10" aria-labelledby="how-it-works-title">
