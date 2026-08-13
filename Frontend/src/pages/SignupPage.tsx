@@ -1,10 +1,12 @@
-import { type FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { type FormEvent, type KeyboardEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getAuthErrorMessage, signup } from "../api/authApi";
 
 const EMAIL_DOMAINS = ["gmail.com", "naver.com", "daum.net", "kakao.com"] as const;
 const CUSTOM_DOMAIN_VALUE = "custom";
 
 function SignupPage() {
+  const navigate = useNavigate();
   const [emailLocal, setEmailLocal] = useState("");
   const [selectedDomain, setSelectedDomain] = useState<string>(EMAIL_DOMAINS[0]);
   const [customDomain, setCustomDomain] = useState("");
@@ -13,6 +15,7 @@ function SignupPage() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isCustomDomain = selectedDomain === CUSTOM_DOMAIN_VALUE;
   const emailDomain = isCustomDomain ? customDomain.trim() : selectedDomain;
@@ -31,8 +34,13 @@ function SignupPage() {
     email && isPasswordLengthValid && confirmPassword && password === confirmPassword,
   );
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
     setPasswordTouched(true);
     setConfirmPasswordTouched(true);
 
@@ -47,9 +55,32 @@ function SignupPage() {
       return;
     }
 
-    // The sign-up API can be called here with this validated payload.
-    const payload = { email, password };
-    void payload;
+    setIsSubmitting(true);
+
+    try {
+      await signup({ email, password });
+      navigate("/login", { replace: true });
+    } catch (error) {
+      setErrorMessage(
+        getAuthErrorMessage(error, "회원가입에 실패했습니다. 잠시 후 다시 시도해주세요."),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent.isComposing ||
+      event.target instanceof HTMLSelectElement ||
+      event.target instanceof HTMLButtonElement
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.requestSubmit();
   };
 
   return (
@@ -60,7 +91,12 @@ function SignupPage() {
           <p className="mt-1.5 text-sm leading-6 text-muted">Create your AlgoAPI account</p>
         </div>
 
-        <form className="space-y-4" onSubmit={handleSubmit} noValidate>
+        <form
+          className="space-y-4"
+          onSubmit={handleSubmit}
+          onKeyDown={handleFormKeyDown}
+          noValidate
+        >
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-foreground" htmlFor="email-local">
               Email
@@ -180,7 +216,10 @@ function SignupPage() {
               name="password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setErrorMessage(null);
+              }}
               onBlur={() => setPasswordTouched(true)}
               placeholder="8~32자로 입력해주세요."
               autoComplete="new-password"
@@ -210,7 +249,10 @@ function SignupPage() {
               name="confirmPassword"
               type="password"
               value={confirmPassword}
-              onChange={(event) => setConfirmPassword(event.target.value)}
+              onChange={(event) => {
+                setConfirmPassword(event.target.value);
+                setErrorMessage(null);
+              }}
               onBlur={() => setConfirmPasswordTouched(true)}
               placeholder="Confirm your password"
               autoComplete="new-password"
@@ -238,9 +280,9 @@ function SignupPage() {
           <button
             className="h-11 w-full rounded-md border border-primary bg-primary px-4 text-sm font-semibold text-on-primary transition-colors enabled:cursor-pointer enabled:hover:border-primary-hover enabled:hover:bg-primary-hover disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/20 disabled:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
           >
-            Sign Up
+            {isSubmitting ? "Signing up..." : "Sign Up"}
           </button>
         </form>
 

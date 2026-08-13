@@ -1,11 +1,16 @@
-import { type FormEvent, useState } from "react";
-import { Link } from "react-router-dom";
+import { type FormEvent, type KeyboardEvent, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { getAuthErrorMessage } from "../api/authApi";
+import { useAuth } from "../auth/auth-context";
 
 function LoginPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailTouched, setEmailTouched] = useState(false);
-  const [errorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const canSubmit = Boolean(email.trim() && password);
   const isEmailFormatValid = /^[^\s@]+@[^\s@]+$/.test(email.trim());
   const emailError =
@@ -13,10 +18,10 @@ function LoginPage() {
       ? "올바른 이메일 주소를 입력해주세요."
       : null;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!canSubmit) {
+    if (!canSubmit || isSubmitting) {
       return;
     }
 
@@ -26,9 +31,32 @@ function LoginPage() {
       return;
     }
 
-    // The login API can be called here with the validated credentials.
-    const credentials = { email: email.trim(), password };
-    void credentials;
+    setErrorMessage(null);
+    setIsSubmitting(true);
+
+    try {
+      await login({ email: email.trim(), password });
+      navigate("/", { replace: true });
+    } catch (error) {
+      setErrorMessage(
+        getAuthErrorMessage(error, "이메일 또는 비밀번호가 올바르지 않습니다."),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (
+      event.key !== "Enter" ||
+      event.nativeEvent.isComposing ||
+      event.target instanceof HTMLButtonElement
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.currentTarget.requestSubmit();
   };
 
   return (
@@ -39,7 +67,12 @@ function LoginPage() {
           <p className="mt-2 text-sm leading-6 text-muted">Sign in to your AlgoAPI account</p>
         </div>
 
-        <form className="space-y-5" onSubmit={handleSubmit} noValidate>
+        <form
+          className="space-y-5"
+          onSubmit={handleSubmit}
+          onKeyDown={handleFormKeyDown}
+          noValidate
+        >
           <div className="space-y-2">
             <label className="block text-sm font-semibold text-foreground" htmlFor="email">
               Email
@@ -50,7 +83,10 @@ function LoginPage() {
               name="email"
               type="email"
               value={email}
-              onChange={(event) => setEmail(event.target.value)}
+              onChange={(event) => {
+                setEmail(event.target.value);
+                setErrorMessage(null);
+              }}
               onBlur={() => setEmailTouched(true)}
               placeholder="your@email.com"
               autoComplete="email"
@@ -75,7 +111,10 @@ function LoginPage() {
               name="password"
               type="password"
               value={password}
-              onChange={(event) => setPassword(event.target.value)}
+              onChange={(event) => {
+                setPassword(event.target.value);
+                setErrorMessage(null);
+              }}
               placeholder="Enter your password"
               autoComplete="current-password"
               required
@@ -93,9 +132,9 @@ function LoginPage() {
           <button
             className="h-11 w-full rounded-md border border-primary bg-primary px-4 text-sm font-semibold text-on-primary transition-colors enabled:cursor-pointer enabled:hover:border-primary-hover enabled:hover:bg-primary-hover disabled:cursor-not-allowed disabled:border-border disabled:bg-muted/20 disabled:text-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
           >
-            Login
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
         </form>
 
