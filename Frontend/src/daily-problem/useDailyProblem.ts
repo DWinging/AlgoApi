@@ -1,13 +1,16 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { getDailyProblem, getProblemErrorMessage } from "../api/problemApi";
+import { useAuth } from "../auth/auth-context";
 
-const DAILY_PROBLEM_STORAGE_KEY = "algoapi.dailyProblemUrl";
+const LEGACY_DAILY_PROBLEM_STORAGE_KEY = "algoapi.localHistory";
+const DAILY_PROBLEM_STORAGE_KEY_PREFIX = "algoapi.localHistory";
 
 type DailyProblemCache = {
+  userId: number;
   date: string;
   url: string;
+  problemId: number;
 };
-
-export type DailyProblemFetcher = () => Promise<string>;
 
 function getToday() {
   const today = new Date();
@@ -17,14 +20,38 @@ function getToday() {
   return `${year}-${month}-${day}`;
 }
 
-function readCachedUrl() {
+function getDailyProblemStorageKey(userId: number) {
+  return `${DAILY_PROBLEM_STORAGE_KEY_PREFIX}.${userId}`;
+}
+
+function readCachedProblem(userId: number | null) {
+  if (!userId) {
+    return null;
+  }
+
   try {
-    const storedValue = sessionStorage.getItem(DAILY_PROBLEM_STORAGE_KEY);
-    if (!storedValue) return null;
+    const storageKey = getDailyProblemStorageKey(userId);
+    const storedValue = localStorage.getItem(storageKey);
+
+    if (!storedValue) {
+      return null;
+    }
 
     const cache = JSON.parse(storedValue) as Partial<DailyProblemCache>;
-    return cache.date === getToday() && cache.url ? cache.url : null;
+
+    if (
+      cache.userId === userId &&
+      cache.date === getToday() &&
+      cache.url &&
+      typeof cache.problemId === "number"
+    ) {
+      return cache as DailyProblemCache;
+    }
+
+    localStorage.removeItem(storageKey);
+    return null;
   } catch {
+    localStorage.removeItem(getDailyProblemStorageKey(userId));
     return null;
   }
 }
@@ -33,33 +60,85 @@ function openInNewTab(url: string) {
   window.open(url, "_blank", "noopener,noreferrer");
 }
 
-export function useDailyProblem(fetchDailyProblem?: DailyProblemFetcher) {
-  const [dailyProblemUrl, setDailyProblemUrl] = useState<string | null>(readCachedUrl);
+export function useDailyProblem() {
+  const { userId } = useAuth();
+  const [dailyProblem, setDailyProblem] = useState<DailyProblemCache | null>(() =>
+    readCachedProblem(userId),
+  );
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const pendingRef = useRef(false);
 
+  useEffect(() => {
+    localStorage.removeItem(LEGACY_DAILY_PROBLEM_STORAGE_KEY);
+  }, []);
+
+  useEffect(() => {
+    setDailyProblem(readCachedProblem(userId));
+    setErrorMessage(null);
+  }, [userId]);
+
   const openDailyProblem = useCallback(async () => {
-    if (dailyProblemUrl) {
-      openInNewTab(dailyProblemUrl);
+    if (!userId) {
+      setErrorMessage("로그인 후 오늘의 문제를 확인해주세요.");
       return;
     }
 
-    if (!fetchDailyProblem || pendingRef.current) return;
+    const cachedProblem = readCachedProblem(userId) ?? dailyProblem;
+
+    if (cachedProblem?.userId === userId && cachedProblem.date === getToday()) {
+      openInNewTab(cachedProblem.url);
+      return;
+    }
+
+    if (pendingRef.current) {
+      return;
+    }
 
     pendingRef.current = true;
     setIsLoading(true);
+    setErrorMessage(null);
+    const problemWindow = window.open("about:blank", "_blank");
+
+    if (problemWindow) {
+      problemWindow.opener = null;
+    }
 
     try {
-      const url = await fetchDailyProblem();
-      const cache: DailyProblemCache = { date: getToday(), url };
-      sessionStorage.setItem(DAILY_PROBLEM_STORAGE_KEY, JSON.stringify(cache));
-      setDailyProblemUrl(url);
-      openInNewTab(url);
+      const problem = await getDailyProblem();
+      const cache: DailyProblemCache = {
+        userId,
+        date: getToday(),
+        url: problem.url,
+        problemId: problem.id,
+      };
+
+      localStorage.setItem(getDailyProblemStorageKey(userId), JSON.stringify(cache));
+      setDailyProblem(cache);
+
+      if (problemWindow) {
+        problemWindow.location.replace(problem.url);
+      } else {
+        openInNewTab(problem.url);
+      }
+    } catch (error) {
+      problemWindow?.close();
+      setErrorMessage(
+        getProblemErrorMessage(
+          error,
+          "오늘의 문제를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+        ),
+      );
     } finally {
       pendingRef.current = false;
       setIsLoading(false);
     }
-  }, [dailyProblemUrl, fetchDailyProblem]);
+  }, [dailyProblem, userId]);
 
-  return { dailyProblemUrl, isLoading, openDailyProblem };
+  return {
+    dailyProblemUrl: dailyProblem?.url ?? null,
+    isLoading,
+    errorMessage,
+    openDailyProblem,
+  };
 }

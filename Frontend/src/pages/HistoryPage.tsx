@@ -1,10 +1,22 @@
-import { type CSSProperties, useCallback, useLayoutEffect, useRef, useState } from "react";
+import {
+  type CSSProperties,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import {
+  getProblemErrorMessage,
+  getProblemHistory,
+  type ProblemHistoryResponse,
+} from "../api/problemApi";
 import { useDailyProblem } from "../daily-problem/useDailyProblem";
 
 type HistoryItem = {
   id: number;
   date: string;
-  platform: "LeetCode" | "SWEA" | "Programmers";
+  platform: string;
   problem: string;
   level: string;
   algorithms: string[];
@@ -145,11 +157,61 @@ function AlgorithmBadges({ algorithms, expanded, onToggle }: AlgorithmBadgesProp
 }
 
 function HistoryPage() {
-  // Populate these states from the History and daily recommendation APIs.
-  const [historyItems] = useState<HistoryItem[]>([]);
+  const [historyItems, setHistoryItems] = useState<HistoryItem[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [historyError, setHistoryError] = useState<string | null>(null);
   const [expandedRows, setExpandedRows] = useState<Set<number>>(() => new Set());
-  const { dailyProblemUrl, isLoading: isDailyProblemLoading, openDailyProblem } =
-    useDailyProblem();
+  const {
+    dailyProblemUrl,
+    isLoading: isDailyProblemLoading,
+    errorMessage: dailyProblemError,
+    openDailyProblem,
+  } = useDailyProblem();
+
+  const mapHistoryItem = (item: ProblemHistoryResponse): HistoryItem => ({
+    id: item.id,
+    date: item.allocatedDate,
+    platform: item.platform,
+    problem: item.title,
+    level: item.level,
+    algorithms: item.algorithms,
+    url: item.url,
+  });
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadHistory = async () => {
+      setIsHistoryLoading(true);
+      setHistoryError(null);
+
+      try {
+        const history = await getProblemHistory();
+
+        if (isActive) {
+          setHistoryItems(history.map(mapHistoryItem));
+        }
+      } catch (error) {
+        if (isActive) {
+          setHistoryError(
+            getProblemErrorMessage(
+              error,
+              "문제 기록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.",
+            ),
+          );
+        }
+      } finally {
+        if (isActive) {
+          setIsHistoryLoading(false);
+        }
+      }
+    };
+
+    void loadHistory();
+    return () => {
+      isActive = false;
+    };
+  }, [dailyProblemUrl]);
 
   const toggleRow = (id: number) => {
     setExpandedRows((currentRows) => {
@@ -176,14 +238,32 @@ function HistoryPage() {
           className="ml-auto inline-flex h-9 shrink-0 items-center rounded-md border border-border bg-surface px-3 text-sm font-semibold text-muted transition-colors enabled:cursor-pointer enabled:hover:border-primary enabled:hover:text-primary disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           type="button"
           onClick={openDailyProblem}
-          disabled={!dailyProblemUrl || isDailyProblemLoading}
+          disabled={isDailyProblemLoading}
         >
-          오늘의 문제
+          {isDailyProblemLoading ? "불러오는 중..." : "오늘의 문제"}
         </button>
       </header>
 
-      <section className="mt-10 border-t border-border pt-8" aria-label="추천 문제 이력">
-        {historyItems.length === 0 ? (
+      {dailyProblemError && (
+        <p
+          className="mt-5 rounded-md border border-danger-border bg-danger-surface px-3 py-2.5 text-sm text-danger"
+          role="alert"
+        >
+          {dailyProblemError}
+        </p>
+      )}
+
+      <section className="mt-10 border-t border-border pt-8" aria-label="문제 기록">
+        {isHistoryLoading ? (
+          <p className="py-12 text-center text-sm text-muted">문제 기록을 불러오는 중입니다.</p>
+        ) : historyError ? (
+          <p
+            className="rounded-md border border-danger-border bg-danger-surface px-3 py-2.5 text-sm text-danger"
+            role="alert"
+          >
+            {historyError}
+          </p>
+        ) : historyItems.length === 0 ? (
           <p className="py-12 text-center text-sm text-muted">아직 문제 기록이 없습니다.</p>
         ) : (
           <div className="w-full min-w-0 text-left text-sm" role="table">

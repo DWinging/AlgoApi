@@ -3,6 +3,7 @@ import type { LoginRequest, LoginResponse } from "../api/authApi";
 
 export type AuthContextValue = {
   accessToken: string | null;
+  userId: number | null;
   isAuthenticated: boolean;
   login: (request: LoginRequest) => Promise<LoginResponse>;
   logout: () => void;
