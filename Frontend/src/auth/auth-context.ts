@@ -1,8 +1,10 @@
 import { createContext, useContext } from "react";
+import type { LoginRequest, LoginResponse } from "../api/authApi";
 
 export type AuthContextValue = {
+  accessToken: string | null;
   isAuthenticated: boolean;
-  login: (accessToken: string) => void;
+  login: (request: LoginRequest) => Promise<LoginResponse>;
   logout: () => void;
 };
 
