@@ -7,11 +7,12 @@ import com.algo_api.backend.auth.repository.ApiKeyRepository;
 import com.algo_api.backend.auth.repository.UserRepository;
 
 import com.algo_api.backend.auth.type.ApiKeyRole;
+import com.algo_api.backend.global.exception.BusinessException;
+import com.algo_api.backend.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.lang.NonNull;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -38,17 +39,13 @@ public class ApiKeyService {
         String apiKeyHash = hash(rawApiKey);
 
         ApiKey apiKey = apiKeyRepository.findByApiKeyHash(apiKeyHash)
-                .orElseThrow(() ->
-                        new IllegalArgumentException("유효하지 않은 API Key입니다.")
-                );
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_API_KEY));
 
-        if (!apiKey.isActive()) {
-            throw new IllegalStateException("비활성화된 API Key입니다.");
-        }
-
-        if (apiKey.getExpiresAt() != null
-                && apiKey.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new IllegalStateException("만료된 API Key입니다.");
+        if (!apiKey.isActive()
+                || !apiKey.getUser().isActive()
+                || (apiKey.getExpiresAt() != null
+                && apiKey.getExpiresAt().isBefore(LocalDateTime.now()))) {
+            throw new BusinessException(ErrorCode.INVALID_API_KEY);
         }
 
         return apiKey;
@@ -57,12 +54,12 @@ public class ApiKeyService {
     @Transactional
     public String issue(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow();
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (apiKeyRepository
                 .findByUser_IdAndActiveTrueAndRole(userId, ApiKeyRole.USER)
                 .isPresent()) {
-            throw new IllegalStateException("이미 활성 API Key가 존재합니다.");
+            throw new BusinessException(ErrorCode.API_KEY_ALREADY_ISSUED);
         }
 
         return createApiKey(user);
@@ -71,11 +68,11 @@ public class ApiKeyService {
     @Transactional
     public String reissue(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow();
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         ApiKey currentKey = apiKeyRepository
                 .findByUser_IdAndActiveTrueAndRole(userId, ApiKeyRole.USER)
-                .orElseThrow();
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_API_KEY));
 
         currentKey.deactivate();
 
@@ -106,7 +103,7 @@ public class ApiKeyService {
 
             return HexFormat.of().formatHex(hashedBytes);
         } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("API Key 해시 생성에 실패했습니다.");
+            throw new IllegalStateException("API Key 해시 생성에 실패했습니다.", e);
         }
     }
 
@@ -119,6 +116,11 @@ public class ApiKeyService {
 
     @Transactional
     public ApiKeyStatusResponse getStatus(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.USER_NOT_FOUND)
+                );
+
         return apiKeyRepository.findFirstByUser_IdOrderByIssuedAtDescIdDesc(userId)
                 .map(apiKey -> new ApiKeyStatusResponse(
                         true,

@@ -1,8 +1,9 @@
 package com.algo_api.backend.problem.service;
 
-import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.entity.User;
 import com.algo_api.backend.auth.repository.UserRepository;
+import com.algo_api.backend.global.exception.BusinessException;
+import com.algo_api.backend.global.exception.ErrorCode;
 import com.algo_api.backend.problem.dto.ProblemCreateRequest;
 import com.algo_api.backend.problem.dto.ProblemHistoryResponse;
 import com.algo_api.backend.problem.dto.ProblemResponse;
@@ -92,7 +93,7 @@ public class ProblemService {
     public ProblemResponse recommend(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalStateException("사용자를 찾을 수 없습니다.")
+                        new BusinessException(ErrorCode.USER_NOT_FOUND)
                 );
 
         LocalDate today = LocalDate.now();
@@ -132,12 +133,17 @@ public class ProblemService {
     private Problem getRandomProblem(User user) {
         return problemRepository.findRandomUnallocated(user.getId())
                 .orElseThrow(() ->
-                        new IllegalStateException("추천 가능한 문제가 없습니다.")
+                        new BusinessException(ErrorCode.NO_AVAILABLE_PROBLEM)
                 );
     }
 
     @Transactional
     public List<ProblemHistoryResponse> getHistory(Long userId) {
+        userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new BusinessException(ErrorCode.USER_NOT_FOUND)
+                );
+
         return dailyAllocatedRepository
                 .findAllByUser_IdOrderByAllocatedDateDesc(userId)
                 .stream()

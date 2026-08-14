@@ -3,7 +3,6 @@ package com.algo_api.backend.auth.controller;
 import com.algo_api.backend.auth.dto.ApiKeyStatusResponse;
 import com.algo_api.backend.auth.service.ApiKeyService;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.connector.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
