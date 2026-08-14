@@ -1,7 +1,5 @@
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const DEVELOPMENT_API_ORIGIN = "http://localhost:8080";
+const configuredApiOrigin = import.meta.env.VITE_API_BASE_URL || DEVELOPMENT_API_ORIGIN;
+const API_ORIGIN = configuredApiOrigin.replace(/\/+$/, "");
 
-if (!configuredApiBaseUrl) {
-  throw new Error("VITE_API_BASE_URL 환경변수가 설정되지 않았습니다.");
-}
-
-export const API_BASE_URL = configuredApiBaseUrl.replace(/\/+$/, "");
+export const API_BASE_URL = `${API_ORIGIN}/api`;

@@ -27,3 +27,4 @@ dist/
 .firebase/
 .env
 .env.*
+!.env.production
