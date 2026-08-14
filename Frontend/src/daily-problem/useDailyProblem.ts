@@ -80,7 +80,6 @@ export function useDailyProblem() {
 
   const openDailyProblem = useCallback(async () => {
     if (!userId) {
-      setErrorMessage("로그인 후 오늘의 문제를 확인해주세요.");
       return;
     }
 
