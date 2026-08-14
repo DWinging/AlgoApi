@@ -1,5 +1,10 @@
 import axios from "axios";
-import { expireAuthSession, getStoredAccessToken } from "../auth/auth-storage";
+import {
+  expireAuthSession,
+  getStoredAccessToken,
+  getValidStoredAccessToken,
+} from "../auth/auth-storage";
+import { navigateForApiError } from "./apiError";
 
 const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
@@ -11,7 +16,7 @@ export const axiosInstance = axios.create({
 });
 
 axiosInstance.interceptors.request.use((config) => {
-  const accessToken = getStoredAccessToken();
+  const accessToken = getValidStoredAccessToken();
 
   if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
@@ -23,8 +28,23 @@ axiosInstance.interceptors.request.use((config) => {
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401 && getStoredAccessToken()) {
+    if (!axios.isAxiosError(error) || !error.response) {
+      return Promise.reject(error);
+    }
+
+    const status = error.response.status;
+    const isLoginRequest = error.config?.url?.endsWith("/auth/login") ?? false;
+
+    if (status === 401 && !isLoginRequest) {
       expireAuthSession();
+    } else if (status === 403) {
+      if (getStoredAccessToken()) {
+        navigateForApiError(403);
+      } else {
+        expireAuthSession();
+      }
+    } else if (status >= 500) {
+      navigateForApiError(500);
     }
 
     return Promise.reject(error);
