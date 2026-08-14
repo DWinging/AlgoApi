@@ -1,6 +1,5 @@
 package com.algo_api.backend.problem.entity;
 
-import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

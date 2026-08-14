@@ -1,5 +1,7 @@
 package com.algo_api.backend.problem.type;
 
+import com.algo_api.backend.global.exception.BusinessException;
+import com.algo_api.backend.global.exception.ErrorCode;
 import lombok.Getter;
 
 import java.util.Arrays;
@@ -77,9 +79,7 @@ public enum AlgorithmType {
                 .filter(value -> value.getDisplayName().equals(displayName))
                 .findFirst()
                 .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "지원하지 않는 알고리즘입니다: " + displayName
-                        )
+                        new BusinessException(ErrorCode.INVALID_ALGORITHM)
                 );
     }
 }

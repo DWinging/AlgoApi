@@ -2,6 +2,9 @@ package com.algo_api.backend.global.security;
 
 import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.service.ApiKeyService;
+import com.algo_api.backend.global.exception.BusinessException;
+import com.algo_api.backend.global.exception.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -12,6 +15,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.util.List;
@@ -23,6 +27,7 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
     private static final String API_KEY_HEADER = "X-API-Key";
 
     private final ApiKeyService apiKeyService;
+    private final JsonMapper jSonMapper;
 
     @Override
     protected void doFilterInternal(
@@ -37,22 +42,39 @@ public class ApiKeyAuthenticationFilter extends OncePerRequestFilter {
                 && !rawApiKey.isBlank()
                 && SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            ApiKey apiKey = apiKeyService.authenticate(rawApiKey);
+            try {
+                ApiKey apiKey = apiKeyService.authenticate(rawApiKey);
 
-            String authority = switch (apiKey.getRole()) {
-                case USER -> "ROLE_API_USER";
-                case ADMIN -> "ROLE_API_ADMIN";
-            };
+                String authority = switch (apiKey.getRole()) {
+                    case USER -> "ROLE_API_USER";
+                    case ADMIN -> "ROLE_API_ADMIN";
+                };
 
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            apiKey,
-                            null,
-                            List.of(new SimpleGrantedAuthority(authority))
-                    );
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                apiKey,
+                                null,
+                                List.of(new SimpleGrantedAuthority(authority))
+                        );
 
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
+                SecurityContextHolder.getContext()
+                        .setAuthentication(authentication);
+
+            } catch (BusinessException e) {
+                ErrorResponse errorResponse =
+                        ErrorResponse.from(e.getErrorCode());
+
+                response.setStatus(e.getErrorCode().getStatus().value());
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+
+                jSonMapper.writeValue(
+                        response.getWriter(),
+                        errorResponse
+                );
+
+                return;
+            }
         }
 
         filterChain.doFilter(request, response);
