@@ -1,6 +1,6 @@
 import { type FormEvent, type KeyboardEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getAuthErrorMessage } from "../api/authApi";
+import { getLoginErrorMessage } from "../api/authApi";
 import { useAuth } from "../auth/auth-context";
 
 function LoginPage() {
@@ -38,9 +38,7 @@ function LoginPage() {
       await login({ email: email.trim(), password });
       navigate("/", { replace: true });
     } catch (error) {
-      setErrorMessage(
-        getAuthErrorMessage(error, "이메일 또는 비밀번호가 올바르지 않습니다."),
-      );
+      setErrorMessage(getLoginErrorMessage(error));
     } finally {
       setIsSubmitting(false);
     }

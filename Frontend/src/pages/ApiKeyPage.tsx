@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   getApiKeyStatus,
   getApiKeyErrorMessage,
+  isApiKeyAlreadyIssuedError,
   issueApiKey as requestApiKeyIssue,
   reissueApiKey as requestApiKeyReissue,
 } from "../api/apiKeyApi";
@@ -17,6 +18,7 @@ function ApiKeyPage() {
   const [isRegenerateOpen, setIsRegenerateOpen] = useState(false);
   const [pendingAction, setPendingAction] = useState<"issue" | "reissue" | null>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isStatusAvailable, setIsStatusAvailable] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const formatDate = (date: string | null) =>
@@ -33,6 +35,7 @@ function ApiKeyPage() {
 
     if (!status.issued) {
       setApiKeyInfo(null);
+      setIsStatusAvailable(true);
       return;
     }
 
@@ -41,6 +44,7 @@ function ApiKeyPage() {
       issuedAt: formatDate(status.issuedAt),
       expiresAt: formatDate(status.expiresAt),
     });
+    setIsStatusAvailable(true);
   }, []);
 
   useEffect(() => {
@@ -51,6 +55,7 @@ function ApiKeyPage() {
         await loadApiKeyStatus();
       } catch (error) {
         if (isActive) {
+          setIsStatusAvailable(false);
           setErrorMessage(
             getApiKeyErrorMessage(
               error,
@@ -98,6 +103,16 @@ function ApiKeyPage() {
       setErrorMessage(
         getApiKeyErrorMessage(error, "API Key 발급에 실패했습니다. 잠시 후 다시 시도해주세요."),
       );
+
+      if (isApiKeyAlreadyIssuedError(error)) {
+        setIsStatusAvailable(false);
+
+        try {
+          await loadApiKeyStatus();
+        } catch {
+          setIsStatusAvailable(false);
+        }
+      }
     } finally {
       setPendingAction(null);
     }
@@ -145,6 +160,7 @@ function ApiKeyPage() {
           onRegenerate={() => setIsRegenerateOpen(true)}
           isLoading={pendingAction !== null}
           isInitialLoading={isInitialLoading}
+          isStatusAvailable={isStatusAvailable}
         />
         {errorMessage && (
           <p

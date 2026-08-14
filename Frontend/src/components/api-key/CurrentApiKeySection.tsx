@@ -6,6 +6,7 @@ type CurrentApiKeySectionProps = {
   onRegenerate: () => void;
   isLoading: boolean;
   isInitialLoading: boolean;
+  isStatusAvailable: boolean;
 };
 
 const primaryButtonClass =
@@ -21,6 +22,7 @@ function CurrentApiKeySection({
   onRegenerate,
   isLoading,
   isInitialLoading,
+  isStatusAvailable,
 }: CurrentApiKeySectionProps) {
   return (
     <section className="mt-10 border-t border-border pt-8" aria-labelledby="current-key-title">
@@ -30,6 +32,10 @@ function CurrentApiKeySection({
 
       {isInitialLoading ? (
         <p className="mt-4 text-sm leading-6 text-muted">API Key 정보를 불러오는 중입니다.</p>
+      ) : !isStatusAvailable ? (
+        <p className="mt-4 text-sm leading-6 text-muted">
+          API Key 상태를 확인할 수 없습니다.
+        </p>
       ) : !apiKey ? (
         <div className="mt-4">
           <p className="text-sm leading-6 text-muted">아직 발급된 API Key가 없습니다.</p>
