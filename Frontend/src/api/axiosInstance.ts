@@ -4,12 +4,11 @@ import {
   getStoredAccessToken,
   getValidStoredAccessToken,
 } from "../auth/auth-storage";
+import { API_BASE_URL } from "./apiConfig";
 import { navigateForApiError } from "./apiError";
 
-const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
-
 export const axiosInstance = axios.create({
-  baseURL: configuredBaseUrl || "/api",
+  baseURL: API_BASE_URL,
   headers: {
     "Content-Type": "application/json",
   },

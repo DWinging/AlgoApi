@@ -1,6 +1,8 @@
+import { API_BASE_URL } from "../../api/apiConfig";
+
 const curlExample = `curl -X GET \\
   -H "X-API-Key: your-api-key" \\
-  http://localhost:8080/api/v1/problems/recommend`;
+  ${API_BASE_URL}/v1/problems/recommend`;
 
 const responseExample = `{
   "id": 12,
