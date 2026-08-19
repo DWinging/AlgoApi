@@ -4,6 +4,12 @@ import { useAuth } from "../auth/auth-context";
 
 const LEGACY_DAILY_PROBLEM_STORAGE_KEY = "algoapi.localHistory";
 const DAILY_PROBLEM_STORAGE_KEY_PREFIX = "algoapi.localHistory";
+const SEOUL_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 
 type DailyProblemCache = {
   userId: number;
@@ -13,10 +19,10 @@ type DailyProblemCache = {
 };
 
 function getToday() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
+  const dateParts = SEOUL_DATE_FORMATTER.formatToParts(new Date());
+  const year = dateParts.find(({ type }) => type === "year")?.value;
+  const month = dateParts.find(({ type }) => type === "month")?.value;
+  const day = dateParts.find(({ type }) => type === "day")?.value;
   return `${year}-${month}-${day}`;
 }
 
