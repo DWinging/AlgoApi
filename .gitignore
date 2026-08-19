@@ -1,0 +1,65 @@
+# Operating system and IDE files
+.DS_Store
+**/.idea/
+**/.vscode/*
+!**/.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment and local override files
+**/.env
+**/.env.*
+!/Frontend/.env.production
+*.local
+
+# Logs
+**/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Frontend (Vite / Firebase)
+/Frontend/node_modules/
+/Frontend/dist/
+/Frontend/dist-ssr/
+/Frontend/.firebase/
+
+# Backend (Gradle / Spring)
+/Backend/HELP.md
+/Backend/.gradle/
+/Backend/**/build/
+!/Backend/**/src/main/**/build/
+!/Backend/**/src/test/**/build/
+
+# Spring Tool Suite
+/Backend/**/.apt_generated/
+/Backend/**/.classpath
+/Backend/**/.factorypath
+/Backend/**/.project
+/Backend/**/.settings/
+/Backend/**/.springBeans
+/Backend/**/.sts4-cache/
+/Backend/**/bin/
+!/Backend/**/src/main/**/bin/
+!/Backend/**/src/test/**/bin/
+
+# IntelliJ IDEA build files
+/Backend/**/*.iws
+/Backend/**/*.iml
+/Backend/**/*.ipr
+/Backend/**/out/
+!/Backend/**/src/main/**/out/
+!/Backend/**/src/test/**/out/
+
+# NetBeans
+/Backend/nbproject/private/
+/Backend/nbbuild/
+/Backend/dist/
+/Backend/nbdist/
+/Backend/.nb-gradle/
