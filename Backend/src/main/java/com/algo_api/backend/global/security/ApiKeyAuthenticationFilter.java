@@ -4,7 +4,6 @@ import com.algo_api.backend.auth.entity.ApiKey;
 import com.algo_api.backend.auth.service.ApiKeyService;
 import com.algo_api.backend.global.exception.BusinessException;
 import com.algo_api.backend.global.exception.ErrorResponse;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

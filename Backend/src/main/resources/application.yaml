@@ -8,7 +8,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -19,7 +19,7 @@ jwt:
 
 logging:
   level:
-    com.algo_api.backend.global.security: DEBUG
+    com.algo_api.backend.global.security: INFO
 
 api-key:
   expiration-days: ${API_KEY_EXPIRATION_DAYS}

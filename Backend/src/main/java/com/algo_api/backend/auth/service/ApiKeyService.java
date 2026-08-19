@@ -53,7 +53,7 @@ public class ApiKeyService {
 
     @Transactional
     public String issue(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         if (apiKeyRepository
@@ -67,7 +67,7 @@ public class ApiKeyService {
 
     @Transactional
     public String reissue(Long userId) {
-        User user = userRepository.findById(userId)
+        User user = userRepository.findByIdForUpdate(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
 
         ApiKey currentKey = apiKeyRepository
