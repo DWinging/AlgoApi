@@ -12,7 +12,8 @@ public enum Platform {
     BAEKJOON("백준"),
     PROGRAMMERS("프로그래머스"),
     LEETCODE("LeetCode"),
-    SWEA("SWEA");
+    SWEA("SWEA"),
+    CODEFORCES("Codeforces");
 
     private final String displayName;
 
